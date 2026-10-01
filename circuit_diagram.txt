@@ -1,0 +1,252 @@
+================================================================================
+MODULO 7 COUNTER CIRCUIT DIAGRAM
+Using: 2x 74LS76 J-K Flip-Flops, 1x 74LS00 NAND Gate IC
+================================================================================
+
+COMPONENTS:
+-----------
+U1: 74LS76 (Dual J-K Flip-Flop with Set & Clear)
+U2: 74LS76 (Dual J-K Flip-Flop with Set & Clear)
+U3: 74LS00 (Quad 2-Input NAND Gate)
+
+PIN CONFIGURATION (Standard DIP-16):
+74LS76:  1A   2A   3A   4A   5A   6A   GND  8A
+         CLK1 PRE1 CLR1 J1   K1   Q1   Q1'  (...)
+         
+74LS00:  1A   2A   1Y   2B   2A   2Y   GND  ...
+         (NAND gate pins vary per configuration)
+
+================================================================================
+CIRCUIT LOGIC:
+================================================================================
+
+INPUT:
+  - CLK: Clock input (main counter clock)
+  - RST: Reset signal (active LOW)
+  - Vcc: +5V, GND: Ground
+
+OUTPUT:
+  - Q0, Q1, Q2: 3-bit output (counts 0-6, then resets to 0)
+
+STATE SEQUENCE: 000 → 001 → 010 → 011 → 100 → 101 → 110 → (back to 000)
+
+================================================================================
+WIRING DIAGRAM (ASCII):
+================================================================================
+
+         ┌─────────────────────────────────────────────────────────────────┐
+         │                    MODULO 7 COUNTER                             │
+         │                                                                  │
+         │  ┌──────────────────┐         ┌──────────────────┐              │
+         │  │   U1: 74LS76     │         │   U2: 74LS76     │              │
+         │  │  Flip-Flop #1    │         │  Flip-Flop #2    │              │
+         │  │                  │         │                  │              │
+         │  │  J  K  CLK  CLR  │         │  J  K  CLK  CLR  │              │
+         │  │  ↑  ↑   ↑    ↑   │         │  ↑  ↑   ↑    ↑   │              │
+         │  │  │  │   │    │   │         │  │  │   │    │   │              │
+         │  └──┼──┼───┼────┼───┘         └──┼──┼───┼────┼───┘              │
+         │     │  │   │    │                │  │   │    │                  │
+         │  ┌──┴──┴───┼────┴────────────────┴──┴───┼────┴──────────┐       │
+         │  │         │                           │               │       │
+         │  │     1A  │                           │           1A  │       │
+         │  └────┬────┘                           └────┬──────────┘       │
+         │       │                                     │                  │
+         │       └─────────┬───────────────────────────┘                  │
+         │               CLK (from input clock)                           │
+         │                                                                │
+         │  ┌──────────────────┐                                         │
+         │  │   U3: 74LS00     │                                         │
+         │  │   NAND Gates     │                                         │
+         │  │                  │                                         │
+         │  │  Gate 1 & 2:     │                                         │
+         │  │  A ──┐           │                                         │
+         │  │  B ──┼→ Y (NAND) │                                         │
+         │  │      │           │                                         │
+         │  │  Gate 3 & 4: SPARE/CONFIG                                  │
+         │  └──────────────────┘                                         │
+         │       │  │                                                    │
+         │       └──┘                                                    │
+         │        │                                                     │
+         │    RESET LOGIC                                              │
+         │        │                                                    │
+         │        └────→ CLR pins (U1 & U2)                            │
+         └─────────────────────────────────────────────────────────────┘
+
+================================================================================
+DETAILED WIRING (Pin-by-Pin):
+================================================================================
+
+FLIP-FLOP CONFIGURATION (J-K Mode for Counting):
+─────────────────────────────────────────────────
+
+U1 - First Flip-Flop (Bit 0):
+  Pin 1 (1J)  = Vcc (+5V)           [Always SET to divide-by-2]
+  Pin 2 (1K)  = Vcc (+5V)           [Toggle mode]
+  Pin 3 (1CLK)= Clock Input         [Main clock]
+  Pin 4 (1CLR)= Reset signal        [Active LOW]
+  Pin 5 (1PRE)= Vcc (+5V)           [Not used, tie HIGH]
+  Pin 6 (1Q)  = Q0 (Output Bit 0)   [Main output]
+  Pin 7 (GND) = Ground              
+  Pin 8 (1Q') = Q0' (inverted)      [To U3 for reset logic]
+  
+  Pin 9 (2Q')  = Q1' (inverted)     [Feedback]
+  Pin 10(2Q)   = Q1 (Output Bit 1)  [Main output]
+  Pin 11(2PRE) = Vcc                [Not used]
+  Pin 12(2CLR) = Reset signal       [Active LOW]
+  Pin 13(2CLK) = From Q0 (1Q)       [Clock divider chain]
+  Pin 14(2K)   = Vcc                [Toggle mode]
+  Pin 15(2J)   = Vcc                [Toggle mode]
+  Pin 16(Vcc)  = +5V Power
+
+U2 - Second Flip-Flop (Bit 2):
+  Pin 1 (1J)  = Vcc                 [Toggle]
+  Pin 2 (1K)  = Vcc                 [Toggle]
+  Pin 3 (1CLK)= From U1 Q1 (Pin 10) [Clock input]
+  Pin 4 (1CLR)= NAND gate output    [Reset at count 7]
+  Pin 5 (1PRE)= Vcc
+  Pin 6 (1Q)  = Q2 (Output Bit 2)   [Main output]
+  Pin 7 (GND) = Ground
+  Pin 8 (1Q') = Q2' (inverted)      [To U3]
+  
+  Pin 9 (2Q')  = Not used
+  Pin 10(2Q)   = Not used
+  Pin 11(2PRE) = Vcc
+  Pin 12(2CLR) = Not used (or tie to reset signal for safety)
+  Pin 13(2CLK) = Not used
+  Pin 14(2K)   = Not used (tie to Vcc)
+  Pin 15(2J)   = Not used (tie to Vcc)
+  Pin 16(Vcc)  = +5V Power
+
+U3 - NAND Gate (Reset Logic for Modulo 7):
+─────────────────────────────────────────
+Purpose: Detect state 111 (count 7) and generate async RESET
+
+Connection for RESET at count 7 (Q0=1, Q1=1, Q2=1):
+
+  Pin 1 (1A) = Q1 (from U1 Pin 10)
+  Pin 2 (1B) = Q2 (from U2 Pin 6)
+  Pin 3 (1Y) = NAND output → Goes to CLR pins of both flip-flops
+
+  Pin 4 (2A) = Q0' (from U1 Pin 8) 
+  Pin 5 (2B) = Not used (tie to Vcc)
+  Pin 6 (2Y) = Not used or used for spare logic
+
+  Pin 7 (GND) = Ground
+  Pin 8 (3A) = Not used
+  Pin 9 (3B) = Not used
+  Pin 10(3Y) = Not used
+  Pin 11(4A) = Not used
+  Pin 12(4B) = Not used
+  Pin 13(4Y) = Not used
+  Pin 14(Vcc)= +5V Power
+
+================================================================================
+RESET LOGIC EXPLANATION:
+================================================================================
+
+The NAND gate detects when Q1=1 AND Q2=1 (which represents count 6 or 7).
+When the counter reaches 111 (decimal 7), the NAND output goes LOW.
+This LOW pulse clears both flip-flops via their CLR pins (active LOW).
+The counter then resets to 000 and starts counting again.
+
+Truth Table for Reset Detection:
+┌─────┬─────┬──────────────────────┐
+│ Q1  │ Q2  │ NAND Output (CLR)     │
+├─────┼─────┼──────────────────────┤
+│  0  │  0  │ HIGH (1) - No Reset   │
+│  0  │  1  │ HIGH (1) - No Reset   │
+│  1  │  0  │ HIGH (1) - No Reset   │
+│  1  │  1  │ LOW  (0) - RESET!     │
+└─────┴─────┴───────────────────��──┘
+
+================================================================================
+TIMING & FREQUENCY:
+================================================================================
+
+If Clock Input = f Hz:
+  - Q0 (Bit 0) toggles at f/2 Hz
+  - Q1 (Bit 1) toggles at f/4 Hz  
+  - Q2 (Bit 2) toggles at f/8 Hz
+
+Maximum Clock Frequency for 74LS logic: ~25-30 MHz (typical)
+
+Propagation Delay: ~20-30 ns per gate (reset will occur after ~40-60 ns)
+
+================================================================================
+POWER & GROUND:
+================================================================================
+
+Vcc (Pin 16 on both 74LS76, Pin 14 on 74LS00): +5V
+GND (Pin 7 on 74LS76, Pin 7 on 74LS00):       Ground
+
+Bypass Capacitor: 0.1µF ceramic cap between Vcc and GND (close to each IC)
+Main filter cap: 10µF electrolytic across power supply
+
+================================================================================
+COMPLETE PIN CONNECTION LIST:
+================================================================================
+
+Power Distribution:
+  Vcc = +5V  (Pin 16 U1, Pin 16 U2, Pin 14 U3)
+  GND = 0V   (Pin 7  U1, Pin 7  U2, Pin 7  U3)
+
+Clock Input → U1 Pin 3 (1CLK)
+Reset Input (LOW active) → U1 Pin 4 (1CLR), U2 Pin 4 (1CLR)
+
+Output Bits:
+  Q0 = U1 Pin 6 (1Q)
+  Q1 = U1 Pin 10 (2Q)
+  Q2 = U2 Pin 6 (1Q)
+
+Internal Clock Chain:
+  U1 Pin 6 (1Q/Q0) → U1 Pin 13 (2CLK) 
+  U1 Pin 10 (2Q/Q1) → U2 Pin 3 (1CLK)
+
+Reset Logic Chain:
+  U1 Pin 10 (2Q/Q1) → U3 Pin 1 (1A)
+  U2 Pin 6 (1Q/Q2) → U3 Pin 2 (1B)
+  U3 Pin 3 (1Y) → U1 Pin 4 (1CLR) and U2 Pin 4 (1CLR)
+
+Tied to Vcc (Pull-up):
+  U1 Pin 1, 2, 5, 15
+  U1 Pin 14, 15
+  U2 Pin 1, 2, 5, 15
+  U2 Pin 14, 15
+  U3 Pin 5 (or left floating if unused)
+
+================================================================================
+STATE SEQUENCE TABLE:
+================================================================================
+
+Assuming active-LOW reset, counter increments on clock rising edge:
+
+Count │ Q2 │ Q1 │ Q0 │ Decimal │ Reset Status
+──────┼────┼────┼────┼─────────┼─────────────
+  0   │ 0  │ 0  │ 0  │    0    │ ACTIVE (normal)
+  1   │ 0  │ 0  │ 1  │    1    │ ACTIVE (normal)
+  2   │ 0  │ 1  │ 0  │    2    │ ACTIVE (normal)
+  3   │ 0  │ 1  │ 1  │    3    │ ACTIVE (normal)
+  4   │ 1  │ 0  │ 0  │    4    │ ACTIVE (normal)
+  5   │ 1  │ 0  │ 1  │    5    │ ACTIVE (normal)
+  6   │ 1  │ 1  │ 0  │    6    │ ACTIVE (normal)
+  7   │ 1  │ 1  │ 1  │    7    │ RESET TRIGGERED! → back to 000
+──────┴────┴────┴────┴─────────┴─────────────
+
+================================================================================
+DESIGN NOTES:
+================================================================================
+
+1. The circuit counts from 0 to 6 in binary (3-bit output).
+2. When count reaches 7 (111), the NAND gate detects Q1 & Q2 = 1.
+3. NAND output goes LOW, clearing both flip-flops asynchronously.
+4. Counter immediately resets to 000 and resumes counting.
+5. Propagation delay is minimal (~40-60 ns total).
+6. All flip-flops operate in toggle mode for reliable counting.
+
+7. 74LS76 is used instead of 74LS73 because it has PRESET and CLEAR
+   pins separately accessible, allowing independent control of reset logic.
+
+8. 74LS00 NAND gates are used for their low cost and fast speed.
+   Alternative: Could use 74LS08 AND gates if active-HIGH reset needed.
+
+================================================================================
